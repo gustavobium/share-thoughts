@@ -1,13 +1,12 @@
 const http = require('http');
 const express = require('express');
-const status = require('http-status');
 
-const cnabHeaderRoutes = require('./routes/cnabHeaderRoutes');
+const cnabRoutes = require('./routes/cnabRoutes');
 const sequelize = require ('./database/database');
 
 const app = express();
 app.use(express.json());
-app.use(cnabHeaderRoutes);
+app.use(cnabRoutes);
 
 sequelize.sync({force: false}).then(() => {
     const port = process.env.PORT || 3000;

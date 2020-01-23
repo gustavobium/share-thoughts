@@ -1,4 +1,9 @@
-const express = require ("express");
-const router = express.Router();
+const express = require('express');
+const routes = express.Router();
 
-router.post('/cnab');
+const cnabContent = require('../controller/cnabContent');
+const cnabManual = require('../excel/excel');
+
+routes.post('/cnabContent', cnabContent.store);
+
+module.exports = routes;

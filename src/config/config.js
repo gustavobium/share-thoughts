@@ -6,7 +6,7 @@ module.exports = {
         name: "share-thoughts",
         dialect: "mysql",
         user: "root",
-        password: "hppwr54s"
+        password: "gu@1993"
       }
     },
     production: {
