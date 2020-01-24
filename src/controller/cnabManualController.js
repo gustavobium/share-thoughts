@@ -1,11 +1,13 @@
 const cnabManual = require ('../model/cnabManual');
 const Excel = require('exceljs');
 const path = require('path');
+const username = require('os').userInfo().username;
+
 
 // TODO: Corrigir o path para onde será salvo o CNAB e o nome da worksheet
 exports.salvarManual = (manual, produto, tipo_arquivo) => {
     const wb = new Excel.Workbook();
-    const filePath = path.resolve(`C:\\Users\\gdonadon\\Documents\\GitHub\\share-thoughts\\src\\excel\\`, manual);
+    const filePath = path.resolve(`C:\\Users\\${username}\\Documents\\GitHub\\share-thoughts\\src\\excel\\`, manual);
 
     wb.xlsx.readFile(filePath).then(async function(){
         const ws = wb.getWorksheet("Sheet2");

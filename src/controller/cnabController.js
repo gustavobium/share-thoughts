@@ -1,6 +1,77 @@
 const fs = require('fs');
+const db = require('../database/database');
+
 const Cnab = require('../model/cnab');
 const CnabManual = require('../model/cnabManual');
+const CnabFormula = require ('../model/cnabFormula');
+
+exports.salvarManual = async (manual, produto, tipo_arquivo) => {
+    const wb = new Excel.Workbook();
+    const filePath = path.resolve(`C:\\Users\\${username}\\Documents\\GitHub\\share-thoughts\\src\\excel\\`, manual);
+
+    wb.xlsx.readFile(filePath).then(async function(){
+        const ws = wb.getWorksheet("Sheet2");
+
+        partes = {
+            header: null,
+            detail: null,
+            trailler: null
+        }
+
+        ws.eachRow(async function(row, rowNumber) {
+            if (rowNumber > 1) {
+                num = row.getCell(1).value;
+                nome_campo = row.getCell(2).value;
+                inicio = row.getCell(3).value;
+                fim = row.getCell(4).value;
+                tamanho = row.getCell(5).value;
+                tipo_conteudo = row.getCell(7).value;
+                casas_decimais = row.getCell(8).value;
+                conteudo = row.getCell(9).value;
+
+                if (num == 1 && partes.header == null) {
+                    partes.header = "header";
+                    parte = "header";
+                } else if (num == 1 && partes.header !== null && partes.detail == null) {
+                    partes.detail = "detail";
+                    parte = "detail";
+                } else if (num == 1 && partes.header !== null && partes.detail !== null && partes.trailler == null) {
+                    partes.trailler = "trailler";
+                    parte = "trailler";
+                }
+                
+                if (row.getCell(6).value == "Sim" || row.getCell(6).value == "sim") {
+                    obrigatorio = true;
+                } else {
+                    obrigatorio = false;
+                }
+
+                await cnabManual.create({
+                    produto,
+                    num,
+                    nome_campo,
+                    inicio,
+                    fim,
+                    tamanho,
+                    obrigatorio,
+                    tipo_conteudo,
+                    casas_decimais,
+                    conteudo,
+                    tipo_arquivo,
+                    parte,
+                })
+                .then(() => {
+                    return true;
+                })
+                .catch(error => {
+                    throw Error(error);
+                });
+            }        
+        });
+    }).catch(error => {
+        throw Error (error);
+    });
+}
 
 exports.gerarCnab = async (produto, arquivo) => {
     const readStream = fs.createReadStream(arquivo, {encoding: 'utf8'});
@@ -98,4 +169,24 @@ exports.gerarCnab = async (produto, arquivo) => {
             return "CNAB não cadastrado.";
         }    
     });
+}
+
+exports.cadastrarFormula = async (produto, nomeFormula, formula, variaveis) => {
+    if (!produto || !nomeFormula || !formula || !variaveis) {
+        throw Error ("Todos os parâmetros devem ser preenchidos.");
+    } else if (typeof(variaveis) !== "object") {
+        throw Error ("Variáveis devem ser um Array.");
+    }
+
+    return await CnabFormula.create({ produto, nomeFormula, formula, variaveis });
+}
+
+exports.executarFormula  = async (produto, nomeFormula, idFormula, variaveis) => {
+    let formula = await CnabFormula.findOne({ where: { produto, id: idFormula } });
+    if (formula) {
+        formula = formula.dataValues.formula;
+        const resultado = await db.query(formula);
+        teste =JSON.parse(JSON.stringify(resultado[0]));
+        console.log(teste[0]['SUM(campo_22)'])
+    }
 }
