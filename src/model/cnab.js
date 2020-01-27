@@ -20,6 +20,10 @@ const Cnab = sequelize.define('cnab', {
       allowNull: true,
       type:Sequelize.STRING
    },
+   data_referencia: {
+      allowNull: true,
+      type: Sequelize.STRING
+   },
    campo_1: {
    allowNull: true,
    type:Sequelize.TEXT

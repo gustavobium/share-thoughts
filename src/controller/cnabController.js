@@ -1,16 +1,19 @@
 const fs = require('fs');
 const db = require('../database/database');
+const Excel = require('exceljs');
+const path = require('path');
+const username = require('os').userInfo().username;
 
 const Cnab = require('../model/cnab');
 const CnabManual = require('../model/cnabManual');
 const CnabFormula = require ('../model/cnabFormula');
 
-exports.salvarManual = async (manual, produto, tipo_arquivo) => {
+exports.inserirManual = async (manual, produto, tipo_arquivo) => {
     const wb = new Excel.Workbook();
     const filePath = path.resolve(`C:\\Users\\${username}\\Documents\\GitHub\\share-thoughts\\src\\excel\\`, manual);
 
     wb.xlsx.readFile(filePath).then(async function(){
-        const ws = wb.getWorksheet("Sheet2");
+        const ws = wb.getWorksheet("Planilha1");
 
         partes = {
             header: null,
@@ -46,7 +49,7 @@ exports.salvarManual = async (manual, produto, tipo_arquivo) => {
                     obrigatorio = false;
                 }
 
-                await cnabManual.create({
+                await CnabManual.create({
                     produto,
                     num,
                     nome_campo,
@@ -73,7 +76,7 @@ exports.salvarManual = async (manual, produto, tipo_arquivo) => {
     });
 }
 
-exports.gerarCnab = async (produto, arquivo) => {
+exports.inserirCnab = async (produto, arquivo) => {
     const readStream = fs.createReadStream(arquivo, {encoding: 'utf8'});
 
     readStream.on('data', async data => {
@@ -171,7 +174,7 @@ exports.gerarCnab = async (produto, arquivo) => {
     });
 }
 
-exports.cadastrarFormula = async (produto, nomeFormula, formula, variaveis) => {
+exports.inserirFormula = async (produto, nomeFormula, formula, variaveis) => {
     if (!produto || !nomeFormula || !formula || !variaveis) {
         throw Error ("Todos os parâmetros devem ser preenchidos.");
     } else if (typeof(variaveis) !== "object") {
