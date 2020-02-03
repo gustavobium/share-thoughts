@@ -13,13 +13,9 @@ exports.inserirManual = async (manual, produto, tipo_arquivo) => {
     const filePath = path.resolve(`C:\\Users\\${username}\\Documents\\GitHub\\share-thoughts\\src\\excel\\`, manual);
 
     wb.xlsx.readFile(filePath).then(async function(){
-        const ws = wb.getWorksheet("Planilha1");
+        const ws = wb.getWorksheet();
 
-        partes = {
-            header: null,
-            detail: null,
-            trailler: null
-        }
+        partes = { header: null, detail: null, trailler: null }
 
         ws.eachRow(async function(row, rowNumber) {
             if (rowNumber > 1) {
@@ -76,6 +72,10 @@ exports.inserirManual = async (manual, produto, tipo_arquivo) => {
     });
 }
 
+exports.removerManual = async (produto) => {
+    await CnabManual.destroy({ where: { produto } });
+}
+
 exports.inserirCnab = async (produto, arquivo) => {
     const readStream = fs.createReadStream(arquivo, {encoding: 'utf8'});
 
@@ -83,6 +83,7 @@ exports.inserirCnab = async (produto, arquivo) => {
         const cnab = data.split(/\n/);
         const header = cnab[0];
         const trailler = cnab[cnab.length-2];
+        let data_referencia = undefined;
 
         // Verificando se existe na db o registro de um manual do mesmo tipo do CNAB.
         const headerManual = await CnabManual.findOne({ where: { fim: header.length-1, parte: "header", produto} });
@@ -90,16 +91,23 @@ exports.inserirCnab = async (produto, arquivo) => {
         // Inserindo o HEADER
         if (headerManual) {
             const cnabHeader = await CnabManual.findAll({ where: { parte: "header", produto} });
+
+            // TODO: Melhorar isso aqui, talvez você possa criar um array com todos os campos que podem ser considerados como a data de referência do produto,
+            // ai você vai e coloca o array ali ao invés da string do que tu quer que seja a data de referência
+            const numDataReferencia = await CnabManual.findOne({ where: { produto:'FIDC Mezzo', parte: 'header', nome_campo:'Data de referência do movimento'}});
     
             // Crio um JSON vazio onde será inserido todas informações do header
-            var headerQuebrado = {
-                produto,
-                parte: 'header',
-            };
+            var headerQuebrado = { produto, data_referencia, parte: 'header', };
     
             // Separando o header em um JSON
             for (regra of cnabHeader) {
-                let { num, inicio, fim, tamanho, casas_decimais } = regra.dataValues;       
+                let { num, inicio, fim, tamanho, casas_decimais } = regra.dataValues;
+
+                if (num === numDataReferencia.dataValues.num) {
+                    data_referencia = header.substr(inicio-1, tamanho);
+                    headerQuebrado.data_referencia = data_referencia;
+                }
+
                 headerQuebrado[`campo_${num}`] = header.substr(inicio-1, tamanho);            
             }
             
@@ -122,6 +130,7 @@ exports.inserirCnab = async (produto, arquivo) => {
     
                 var detailQuebrado = {
                     produto,
+                    data_referencia,
                     parte: 'detail',
                 };
                 
@@ -155,6 +164,7 @@ exports.inserirCnab = async (produto, arquivo) => {
             // Crio um JSON vazio onde será inserido todas informações do trailer
             var traillerQuebrado = {
                 produto,
+                data_referencia,
                 parte: 'trailer',
             };
     
@@ -174,6 +184,10 @@ exports.inserirCnab = async (produto, arquivo) => {
     });
 }
 
+exports.removerCnab = async (produto, data) => {
+    await Cnab.destroy({where: {produto, data}});
+}
+
 exports.inserirFormula = async (produto, nomeFormula, formula, variaveis) => {
     if (!produto || !nomeFormula || !formula || !variaveis) {
         throw Error ("Todos os parâmetros devem ser preenchidos.");
@@ -182,6 +196,10 @@ exports.inserirFormula = async (produto, nomeFormula, formula, variaveis) => {
     }
 
     return await CnabFormula.create({ produto, nomeFormula, formula, variaveis });
+}
+
+exports.removerFormula = async (produto, nomeFormula) => {
+    await CnabFormula.destroy({ where: { produto, nomeFormula } });
 }
 
 exports.executarFormula  = async (produto, nomeFormula, idFormula, variaveis) => {
