@@ -3,6 +3,7 @@ const db = require('../database/database');
 const Excel = require('exceljs');
 const path = require('path');
 const username = require('os').userInfo().username;
+const { Op } = require('sequelize');
 
 const Cnab = require('../model/cnab');
 const CnabManual = require('../model/cnabManual');
@@ -70,6 +71,8 @@ exports.inserirManual = async (manual, produto, tipo_arquivo) => {
     }).catch(error => {
         throw Error (error);
     });
+
+    return true;
 }
 
 exports.removerManual = async (produto) => {
@@ -182,32 +185,32 @@ exports.inserirCnab = async (produto, arquivo) => {
             return "CNAB não cadastrado.";
         }    
     });
+
+    return true;
 }
 
 exports.removerCnab = async (produto, data) => {
     await Cnab.destroy({where: {produto, data}});
 }
 
-exports.inserirFormula = async (produto, nomeFormula, formula, variaveis) => {
-    if (!produto || !nomeFormula || !formula || !variaveis) {
+exports.inserirFormula = async (produto, nomeFormula, formula) => {
+    if (!produto || !nomeFormula || !formula) {
         throw Error ("Todos os parâmetros devem ser preenchidos.");
-    } else if (typeof(variaveis) !== "object") {
-        throw Error ("Variáveis devem ser um Array.");
     }
 
-    return await CnabFormula.create({ produto, nomeFormula, formula, variaveis });
+    return await CnabFormula.create({ produto, nomeFormula, formula });
 }
 
 exports.removerFormula = async (produto, nomeFormula) => {
     await CnabFormula.destroy({ where: { produto, nomeFormula } });
 }
 
-exports.executarFormula  = async (produto, nomeFormula, idFormula, variaveis) => {
-    let formula = await CnabFormula.findOne({ where: { produto, id: idFormula } });
+exports.executarFormula  = async (produto, nomeFormula, idFormula) => {
+    // TODO: Adicionar um OR para procurar ou pelo nome da Formula ou pelo seu ID
+    const formula = await CnabFormula.findOne({ where: { produto, id: idFormula } });
     if (formula) {
         formula = formula.dataValues.formula;
         const resultado = await db.query(formula);
-        teste =JSON.parse(JSON.stringify(resultado[0]));
-        console.log(teste[0]['SUM(campo_22)'])
+        return JSON.parse(JSON.stringify(resultado[0]));
     }
 }

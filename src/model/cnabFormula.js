@@ -20,16 +20,6 @@ const CnabFormula = sequelize.define('cnabformula', {
         allowNull: false,
         type: Sequelize.TEXT,
     },
-    variaveis: {
-        allowNull: false,
-        type: Sequelize.TEXT,
-        get: function () { 
-            return JSON.parse(this.getDataValue('variaveis'));
-        },
-        set: function (val) { 
-            return this.setDataValue('variaveis', JSON.stringify(val));
-        },
-    }
 });
 
 module.exports = CnabFormula;
